@@ -148,3 +148,26 @@ h2{font-size: clamp(22px,3.4vw,32px);margin:0 0 18px}
   .hero{padding:54px 0 22px}
   nav ul{display:none}
 }
+
+/* ... mantém tudo que você já tem ... */
+
+/* Overlay do card (APENAS adicione as linhas marcadas) */
+.sample:not(.revealed) .thumb::after{
+  content:""; position:absolute; inset:0;
+  background: linear-gradient(to bottom right, rgba(0,0,0,.28), rgba(0,0,0,.35));
+  transition: opacity .35s ease;
+  pointer-events: none;   /* <- ADICIONE ESTA LINHA */
+  z-index: 1;             /* <- ADICIONE ESTA LINHA */
+}
+
+/* Botão de revelar (só acrescentar z-index) */
+.reveal-btn{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  background:rgba(0,0,0,.6); color:#fff; border:none; padding:8px 12px;
+  border-radius:10px; font-weight:700; letter-spacing:.2px; cursor:pointer;
+  box-shadow:0 10px 24px rgba(0,0,0,.25);
+  transition: transform .2s ease, background .2s ease, opacity .25s ease;
+  z-index: 2;            /* <- ADICIONE ESTA LINHA */
+}
+
+
