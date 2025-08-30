@@ -30,7 +30,7 @@ if (copyBtn && emailText){
   });
 }
 
-// Revelar imagens dos cards ao clicar
+// Revelar imagens dos cards ao clicar (listeners diretos)
 document.querySelectorAll('[data-sample]').forEach(card=>{
   const btn = card.querySelector('.reveal-btn');
   const img = card.querySelector('img');
@@ -38,7 +38,6 @@ document.querySelectorAll('[data-sample]').forEach(card=>{
     card.classList.add('revealed');
   }
   if(btn) btn.addEventListener('click', reveal);
-  // Acessibilidade: permitir Enter/Espaço no botão
   if(btn){
     btn.addEventListener('keydown', (e)=>{
       if(e.key === 'Enter' || e.key === ' '){
@@ -47,8 +46,16 @@ document.querySelectorAll('[data-sample]').forEach(card=>{
       }
     });
   }
-  // Opcional: clicar na própria imagem também revela
   if(img){
     img.addEventListener('click', reveal);
   }
+});
+
+// Fallback: delegação global (mesmo comportamento, mais robusto)
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.reveal-btn');
+  const img = e.target.closest('[data-sample] .thumb img');
+  if (!btn && !img) return;
+  const card = e.target.closest('[data-sample]');
+  if (card) card.classList.add('revealed');
 });
