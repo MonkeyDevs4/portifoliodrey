@@ -30,32 +30,54 @@ if (copyBtn && emailText){
   });
 }
 
-// Revelar imagens dos cards ao clicar (listeners diretos)
+// Função util: marcar como revelado e evitar abrir link no mesmo clique
+function markRevealed(card){
+  if (!card.classList.contains('revealed')) {
+    card.classList.add('revealed');
+    card.dataset.justRevealed = '1'; // flag para este clique
+  }
+}
+
+// Revelar imagens dos cards ao clicar
 document.querySelectorAll('[data-sample]').forEach(card=>{
   const btn = card.querySelector('.reveal-btn');
   const img = card.querySelector('img');
-  function reveal(){
-    card.classList.add('revealed');
-  }
-  if(btn) btn.addEventListener('click', reveal);
-  if(btn){
+
+  if (btn) {
+    btn.addEventListener('click', () => markRevealed(card));
     btn.addEventListener('keydown', (e)=>{
       if(e.key === 'Enter' || e.key === ' '){
         e.preventDefault();
-        reveal();
+        markRevealed(card);
       }
     });
   }
-  if(img){
-    img.addEventListener('click', reveal);
+  if (img) {
+    img.addEventListener('click', () => markRevealed(card));
   }
+
+  // Após revelado, clicar no card abre o link (em nova aba)
+  card.addEventListener('click', (e) => {
+    const href = card.dataset.href;
+    if (!href) return;
+
+    // se acabou de revelar neste mesmo clique, não abre ainda
+    if (card.dataset.justRevealed === '1') {
+      delete card.dataset.justRevealed;
+      return;
+    }
+
+    if (card.classList.contains('revealed')) {
+      window.open(href, '_blank', 'noopener');
+    }
+  });
 });
 
-// Fallback: delegação global (mesmo comportamento, mais robusto)
+// Fallback: delegação global (caso listeners locais falhem)
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.reveal-btn');
   const img = e.target.closest('[data-sample] .thumb img');
   if (!btn && !img) return;
   const card = e.target.closest('[data-sample]');
-  if (card) card.classList.add('revealed');
+  if (card) markRevealed(card);
 });
