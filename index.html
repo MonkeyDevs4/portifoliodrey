@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Andrey Gomes — Web Developer</title>
+  <meta name="description" content="Modern, responsive and professional websites by Andrey Gomes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container nav">
+      <div class="brand"><span class="dot"></span> <span>Andrey Gomes</span></div>
+      <nav aria-label="Main navigation">
+        <ul>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#work">Portfolio</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a class="cta-sm" href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero container">
+    <span class="pill reveal">Web Developer</span>
+    <h1 class="reveal">I build modern, responsive and professional websites.</h1>
+    <p class="reveal">From minimal and elegant to bold and colorful — I craft websites that match your brand, loading fast and working perfectly on any device.</p>
+    <div class="actions reveal">
+      <a class="btn btn-primary" href="mailto:andreygms04@gmail.com">Email me</a>
+      <a class="btn btn-ghost" href="https://www.upwork.com/freelancers/~01c21c4795929bd0f4?mp_source=share" target="_blank" rel="noopener">View Upwork Profile</a>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services" class="container">
+    <h2 class="reveal">Services</h2>
+    <p class="muted reveal">Everything you need to launch a clean, modern and effective website.</p>
+    <div class="grid" style="margin-top:14px">
+      <div class="card svc reveal">
+        <h3>Responsive Websites</h3>
+        <p>Pixel-perfect layouts that adapt to phones, tablets and desktops.</p>
+      </div>
+      <div class="card svc reveal">
+        <h3>Landing Pages</h3>
+        <p>High-converting pages for campaigns, events and product launches.</p>
+      </div>
+      <div class="card svc reveal">
+        <h3>Portfolio & Business Sites</h3>
+        <p>Clean and professional pages to present your work or company.</p>
+      </div>
+      <div class="card svc reveal">
+        <h3>E-commerce (light)</h3>
+        <p>Product pages, carts and checkout integrations when needed.</p>
+      </div>
+      <div class="card svc reveal">
+        <h3>Forms & Email</h3>
+        <p>Contact forms, email capture and basic automations.</p>
+      </div>
+      <div class="card svc reveal">
+        <h3>SEO & Performance</h3>
+        <p>On-page SEO, speed optimization and best practices.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Portfolio Samples -->
+  <section id="work" class="container">
+    <h2 class="reveal">Portfolio Samples</h2>
+    <p class="muted reveal">A few examples and prototypes. Final client projects are added upon delivery.</p>
+
+    <div class="grid" style="margin-top:14px">
+      <!-- CARD 1 -->
+      <article class="sample card reveal" data-sample>
+        <div class="thumb">
+          <img src="images/land.png" alt="Business Landing Page preview" loading="lazy">
+          <button class="reveal-btn" type="button" aria-label="Reveal image">Click to reveal</button>
+        </div>
+        <h3>Business Landing Page</h3>
+        <p>Clean hero, benefits, testimonials and contact CTA.</p>
+      </article>
+
+      <!-- CARD 2 -->
+      <article class="sample card reveal" data-sample>
+        <div class="thumb">
+          <img src="images/port.png" alt="Personal Portfolio preview" loading="lazy">
+          <button class="reveal-btn" type="button" aria-label="Reveal image">Click to reveal</button>
+        </div>
+        <h3>Personal Portfolio</h3>
+        <p>Sections for work, bio and contact — polished and fast.</p>
+      </article>
+
+      <!-- CARD 3 -->
+      <article class="sample card reveal" data-sample>
+        <div class="thumb">
+          <img src="images/loja.png" alt="Store Prototype preview" loading="lazy">
+          <button class="reveal-btn" type="button" aria-label="Reveal image">Click to reveal</button>
+        </div>
+        <h3>Store Prototype</h3>
+        <p>Product grid, detail page and cart flow for demos.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about" class="container about">
+    <h2 class="reveal">About</h2>
+    <div class="card reveal">
+      <p>Hi! I’m <strong>Andrey Gomes</strong>, a web developer focused on fast, accessible and responsive experiences. I understand your goals, design a clean structure and deliver a website you’ll be proud to share.</p>
+      <div class="list">
+        <span class="tag">HTML5</span>
+        <span class="tag">CSS3</span>
+        <span class="tag">JavaScript</span>
+        <span class="tag">Responsive Design</span>
+        <span class="tag">SEO Basics</span>
+        <span class="tag">Performance</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="container contact">
+    <h2 class="reveal">Contact</h2>
+    <div class="card reveal">
+      <div>
+        <div class="big">Let’s build something great together.</div>
+        <p class="muted" style="margin-top:6px">Prefer email? It’s the fastest way to reach me.</p>
+        <div class="email-box" style="margin-top:10px">
+          <span class="email" id="emailText">andreygms04@gmail.com</span>
+          <div style="display:flex;gap:8px">
+            <button class="copy" id="copyBtn">Copy email</button>
+            <a class="btn btn-primary" href="mailto:andreygms04@gmail.com" style="padding:10px 14px;border-radius:10px">Write now</a>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="background:#f8fafc;border-style:dashed">
+          <strong>Also available on</strong>
+          <div class="list" style="margin-top:10px">
+            <a class="tag" href="https://www.upwork.com/freelancers/~01c21c4795929bd0f4?mp_source=share" target="_blank" rel="noopener">Upwork</a>
+            <a class="tag" href="https://github.com/MonkeyDevs4" target="_blank" rel="noopener">GitHub</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Floating Contact -->
+  <button class="float-contact" onclick="window.location.href='mailto:andreygms04@gmail.com'">Email me</button>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
