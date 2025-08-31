@@ -1,4 +1,4 @@
-/* language-toggle.js — EN ⇄ PT-BR (v4.4, botão fixo no canto INFERIOR ESQUERDO)
+/* language-toggle.js — EN ⇄ PT-BR (v4.5, botão fixo no canto INFERIOR ESQUERDO)
    Autor: Andrey Gomes (andreygms04@gmail.com) | GitHub: https://github.com/MonkeyDevs4
    Mantém o botão PT-BR ⇄ EN, traduz todo o conteúdo/atributos/HEAD.
 */
@@ -10,22 +10,16 @@
   const EXCLUDE_TAGS = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "NOSCRIPT", "TEXTAREA"]);
   const STYLE_ID = "lang-toggle-style";
 
-  // ===== Mapeamentos (minúsculas) — textos do seu index.html =====
+  // ===== Textos do seu index.html (minúsculas) =====
   const TEXT_EN_TO_PT = new Map([
     // Nav
-    ["services", "Serviços"],
-    ["portfolio", "Portfólio"],
-    ["about", "Sobre"],
-    ["contact", "Contato"],
-
+    ["services", "Serviços"], ["portfolio", "Portfólio"], ["about", "Sobre"], ["contact", "Contato"],
     // Hero
     ["web developer", "Desenvolvedor Web"],
     ["i build modern, responsive and professional websites.", "Eu crio sites modernos, responsivos e profissionais."],
     ["from minimal and elegant to bold and colorful — i craft websites that match your brand, loading fast and working perfectly on any device.",
      "Do minimalista e elegante ao ousado e colorido — eu desenvolvo sites que combinam com a sua marca, carregam rápido e funcionam perfeitamente em qualquer dispositivo."],
-    ["email me", "Me envie um e-mail"],
-    ["view upwork profile", "Ver perfil no Upwork"],
-
+    ["email me", "Me envie um e-mail"], ["view upwork profile", "Ver perfil no Upwork"],
     // Services
     ["services", "Serviços"],
     ["everything you need to launch a clean, modern and effective website.",
@@ -48,7 +42,6 @@
     ["seo & performance", "SEO & Desempenho"],
     ["on-page seo, speed optimization and best practices.",
      "SEO on-page, otimização de velocidade e boas práticas."],
-
     // Portfolio
     ["portfolio samples", "Exemplos de Portfólio"],
     ["a few examples and prototypes. final client projects are added upon delivery.",
@@ -63,21 +56,14 @@
     ["product grid, detail page and cart flow for demos.",
      "Grade de produtos, página de detalhes e fluxo de carrinho para demonstrações."],
     ["click to reveal", "Clique para revelar"],
-
-    // Tags do About
-    ["responsive design", "Design Responsivo"],
-    ["seo basics", "Noções de SEO"],
-    ["performance", "Desempenho"],
-
+    // Tags About
+    ["responsive design", "Design Responsivo"], ["seo basics", "Noções de SEO"], ["performance", "Desempenho"],
     // Contact
     ["contact", "Contato"],
     ["let’s build something great together.", "Vamos construir algo incrível juntos."],
     ["let's build something great together.", "Vamos construir algo incrível juntos."],
     ["prefer email? it’s the fastest way to reach me.", "Prefere e-mail? É a forma mais rápida de falar comigo."],
-    ["copy email", "Copiar e-mail"],
-    ["write now", "Escrever agora"],
-    ["also available on", "Também disponível em"],
-
+    ["copy email", "Copiar e-mail"], ["write now", "Escrever agora"], ["also available on", "Também disponível em"],
     // Botão flutuante de contato
     ["email me", "Me envie um e-mail"],
   ]);
@@ -86,11 +72,9 @@
     ["business landing page preview", "Prévia de Landing Page Empresarial"],
     ["personal portfolio preview", "Prévia de Portfólio Pessoal"],
     ["store prototype preview", "Prévia de Protótipo de Loja"],
-    ["reveal image", "Revelar imagem"],
-    ["open live demo", "Abrir demo ao vivo"],
+    ["reveal image", "Revelar imagem"], ["open live demo", "Abrir demo ao vivo"],
   ]);
 
-  // Head
   const HEAD_TRANSLATIONS = {
     title_en: "Andrey Gomes — Web Developer",
     title_pt: "Andrey Gomes — Desenvolvedor Web",
@@ -99,77 +83,55 @@
   };
 
   // ===== Infra =====
-  const textOriginal = new WeakMap();        // Node(TEXT) -> string
-  const attrOriginal = new WeakMap();        // Element -> {attr: string}
-  const elementOriginalHTML = new WeakMap(); // Element -> innerHTML (casos especiais)
+  const textOriginal = new WeakMap();
+  const attrOriginal = new WeakMap();
+  const elementOriginalHTML = new WeakMap();
   const touchedTextNodes = new Set();
 
-  // Helpers
   const lc = (s) => (s ?? "").toString().trim().toLowerCase();
   const normalize = (s) => lc(s).replace(/\s+/g, " ").replace(/[’']/g, "'");
 
-  function isTextNodeEligible(node) {
-    if (!node || node.nodeType !== Node.TEXT_NODE) return false;
-    const parent = node.parentElement;
-    if (!parent || EXCLUDE_TAGS.has(parent.tagName)) return false;
-    if (parent.closest("[data-no-i18n]")) return false;
-    const t = node.nodeValue;
-    return t && t.trim().length > 0;
+  function isTextNodeEligible(n){
+    if (!n || n.nodeType !== 3) return false;
+    const p = n.parentElement;
+    return p && !EXCLUDE_TAGS.has(p.tagName) && !p.closest("[data-no-i18n]") && n.nodeValue.trim();
   }
 
-  function TreeWalker(root, whatToShow) {
-    if (document.createTreeWalker) return document.createTreeWalker(root, whatToShow, null);
-    // Polyfill simples (fallback)
-    const texts = [];
-    (function collect(n){ if (n.nodeType === 3) texts.push(n); if (n.childNodes) Array.from(n.childNodes).forEach(collect); })(root);
-    let i = -1;
-    return { nextNode(){ i++; return texts[i] || null; } };
+  function TreeWalker(root, what){ if (document.createTreeWalker) return document.createTreeWalker(root, what, null);
+    const texts=[];(function walk(n){ if(n.nodeType===3) texts.push(n); n.childNodes&&[...n.childNodes].forEach(walk); })(root);
+    let i=-1; return { nextNode(){ i++; return texts[i]||null; } };
   }
 
-  function translateTextNodesToPT(root = document.body) {
-    const walker = new TreeWalker(root, NodeFilter.SHOW_TEXT);
-    let node;
-    while ((node = walker.nextNode())) {
-      if (!isTextNodeEligible(node)) continue;
-      const original = node.nodeValue;
-      const key = lc(original);
-      if (!touchedTextNodes.has(node)) {
-        textOriginal.set(node, original);
-        touchedTextNodes.add(node);
-      }
-      if (TEXT_EN_TO_PT.has(key)) node.nodeValue = TEXT_EN_TO_PT.get(key);
+  function translateTextNodesToPT(root=document.body){
+    const w=new TreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+    while((n=w.nextNode())){ if(!isTextNodeEligible(n)) continue;
+      const orig=n.nodeValue, key=lc(orig);
+      if(!touchedTextNodes.has(n)){ textOriginal.set(n, orig); touchedTextNodes.add(n); }
+      if(TEXT_EN_TO_PT.has(key)) n.nodeValue = TEXT_EN_TO_PT.get(key);
     }
   }
 
-  function translateAttrsToPT(root = document.body) {
-    const all = root.querySelectorAll("*");
-    all.forEach((el) => {
+  function translateAttrsToPT(root=document.body){
+    root.querySelectorAll("*").forEach(el=>{
       if (EXCLUDE_TAGS.has(el.tagName) || el.closest("[data-no-i18n]")) return;
-      let saved = attrOriginal.get(el);
-      if (!saved) { saved = {}; attrOriginal.set(el, saved); }
-      TRANSLATABLE_ATTRS.forEach((attr) => {
-        if (!el.hasAttribute(attr)) return;
-        const val = el.getAttribute(attr); if (!val) return;
-        const key = lc(val);
-        if (!(attr in saved)) saved[attr] = val;
-        if (ATTR_EN_TO_PT.has(key)) el.setAttribute(attr, ATTR_EN_TO_PT.get(key));
+      let saved = attrOriginal.get(el); if(!saved){ saved={}; attrOriginal.set(el,saved); }
+      TRANSLATABLE_ATTRS.forEach(attr=>{
+        if(!el.hasAttribute(attr)) return; const val=el.getAttribute(attr); if(!val) return;
+        const key=lc(val); if(!(attr in saved)) saved[attr]=val;
+        if(ATTR_EN_TO_PT.has(key)) el.setAttribute(attr, ATTR_EN_TO_PT.get(key));
       });
     });
   }
 
-  // ===== Caso especial: parágrafo do "Sobre" com <strong> =====
-  function translateAboutParagraphPT() {
-    const p = document.querySelector("#about .card p");
-    if (!p) return;
-    if (!elementOriginalHTML.has(p)) elementOriginalHTML.set(p, p.innerHTML);
-
+  // Parágrafo do "Sobre" com <strong>
+  function translateAboutParagraphPT(){
+    const p = document.querySelector("#about .card p"); if(!p) return;
+    if(!elementOriginalHTML.has(p)) elementOriginalHTML.set(p, p.innerHTML);
     const name = (p.querySelector("strong")?.textContent || "Andrey Gomes").trim();
-    const txt = normalize(p.textContent);
-    const hasIntro = txt.includes("hi! i'm");
-    const hasFocus = txt.includes("web developer focused on fast, accessible and responsive experiences");
-    const hasProud = txt.includes("you'll be proud to share");
-
-    if (hasIntro && hasFocus && hasProud) {
+    const t = normalize(p.textContent);
+    if (t.includes("hi! i'm") &&
+        t.includes("web developer focused on fast, accessible and responsive experiences") &&
+        t.includes("you'll be proud to share")) {
       p.innerHTML =
         `Olá! Eu sou <strong>${name}</strong>, ` +
         `desenvolvedor web focado em experiências rápidas, acessíveis e responsivas. ` +
@@ -178,93 +140,61 @@
     }
   }
 
-  function revertSpecialCases() {
-    const p = document.querySelector("#about .card p");
-    if (!p) return;
-    const orig = elementOriginalHTML.get(p);
-    if (orig) p.innerHTML = orig;
-  }
+  function revertSpecialCases(){ const p=document.querySelector("#about .card p"); if(!p) return;
+    const orig = elementOriginalHTML.get(p); if(orig) p.innerHTML=orig; }
 
-  function revertToEN() {
+  function revertToEN(){
     revertSpecialCases();
-    touchedTextNodes.forEach((node) => {
-      const orig = textOriginal.get(node);
-      if (typeof orig === "string") node.nodeValue = orig;
-    });
-    document.querySelectorAll("*").forEach((el) => {
-      const saved = attrOriginal.get(el);
-      if (!saved) return;
-      for (const [attr, val] of Object.entries(saved)) el.setAttribute(attr, val);
+    touchedTextNodes.forEach(n=>{ const o=textOriginal.get(n); if(typeof o==="string") n.nodeValue=o; });
+    document.querySelectorAll("*").forEach(el=>{
+      const saved = attrOriginal.get(el); if(!saved) return;
+      for (const [a,v] of Object.entries(saved)) el.setAttribute(a,v);
     });
   }
 
-  // Head
-  function applyHead(lang) {
-    if (lang === "pt") {
-      document.title = HEAD_TRANSLATIONS.title_pt;
-      const meta = document.querySelector('meta[name="description"]');
-      if (meta) meta.setAttribute("content", HEAD_TRANSLATIONS.desc_pt);
-      document.documentElement.lang = "pt-BR";
-    } else {
-      document.title = HEAD_TRANSLATIONS.title_en;
-      const meta = document.querySelector('meta[name="description"]');
-      if (meta) meta.setAttribute("content", HEAD_TRANSLATIONS.desc_en);
-      document.documentElement.lang = "en";
-    }
+  function applyHead(lang){
+    document.title = lang==="pt" ? HEAD_TRANSLATIONS.title_pt : HEAD_TRANSLATIONS.title_en;
+    const m=document.querySelector('meta[name="description"]');
+    if(m) m.setAttribute("content", lang==="pt" ? HEAD_TRANSLATIONS.desc_pt : HEAD_TRANSLATIONS.desc_en);
+    document.documentElement.lang = lang==="pt" ? "pt-BR" : "en";
   }
 
-  // Observer (dinâmico)
-  const observer = new MutationObserver((muts) => {
-    if (getLang() !== "pt") return;
-    for (const m of muts) {
-      if (m.type === "childList") {
-        m.addedNodes.forEach((n) => {
-          if (n.nodeType === 1) {
-            translateTextNodesToPT(n);
-            translateAttrsToPT(n);
-            translateAboutParagraphPT();
-          } else if (n.nodeType === 3 && isTextNodeEligible(n)) {
-            if (!touchedTextNodes.has(n)) textOriginal.set(n, n.nodeValue);
-            const key = lc(n.nodeValue);
-            if (TEXT_EN_TO_PT.has(key)) n.nodeValue = TEXT_EN_TO_PT.get(key);
+  // ===== Observer =====
+  const observer = new MutationObserver((muts)=>{
+    if (getLang()!=="pt") return;
+    for (const m of muts){
+      if (m.type==="childList"){
+        m.addedNodes.forEach(n=>{
+          if (n.nodeType===1){ translateTextNodesToPT(n); translateAttrsToPT(n); translateAboutParagraphPT(); }
+          else if (n.nodeType===3 && isTextNodeEligible(n)){
+            if(!touchedTextNodes.has(n)) textOriginal.set(n, n.nodeValue);
+            const k=lc(n.nodeValue); if(TEXT_EN_TO_PT.has(k)) n.nodeValue=TEXT_EN_TO_PT.get(k);
             touchedTextNodes.add(n);
           }
         });
-      } else if (m.type === "attributes" && TRANSLATABLE_ATTRS.includes(m.attributeName)) {
-        const el = m.target;
-        const saved = attrOriginal.get(el) || {};
-        if (!(m.attributeName in saved)) saved[m.attributeName] = m.oldValue || el.getAttribute(m.attributeName);
-        attrOriginal.set(el, saved);
-        const val = el.getAttribute(m.attributeName);
-        const key = lc(val);
-        if (ATTR_EN_TO_PT.has(key)) el.setAttribute(m.attributeName, ATTR_EN_TO_PT.get(key));
+      } else if (m.type==="attributes" && TRANSLATABLE_ATTRS.includes(m.attributeName)){
+        const el=m.target; const saved=attrOriginal.get(el)||{};
+        if(!(m.attributeName in saved)) saved[m.attributeName]=m.oldValue||el.getAttribute(m.attributeName);
+        attrOriginal.set(el,saved);
+        const val=el.getAttribute(m.attributeName); const k=lc(val);
+        if(ATTR_EN_TO_PT.has(k)) el.setAttribute(m.attributeName, ATTR_EN_TO_PT.get(k));
       }
     }
   });
 
-  function startObserver() {
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeOldValue: true,
-      attributeFilter: TRANSLATABLE_ATTRS,
-    });
+  function startObserver(){
+    observer.observe(document.body,{ childList:true, subtree:true, attributes:true, attributeOldValue:true, attributeFilter:TRANSLATABLE_ATTRS });
   }
 
-  // ==== UI do botão (forçando ESQUERDA) ====
-  function injectStyles() {
-    // Remove estilo antigo se existir
-    const old = document.getElementById(STYLE_ID);
-    if (old) old.remove();
-
-    const css = `
+  // ===== Botão de idioma (FORÇANDO ESQUERDA) =====
+  function injectStyles(){
+    const old=document.getElementById(STYLE_ID); if(old) old.remove();
+    const tag=document.createElement("style"); tag.id=STYLE_ID;
+    tag.textContent = `
       #lang-toggle{
-        position:fixed;
-        left: max(16px, env(safe-area-inset-left)) !important;
-        right: auto !important;
-        bottom: calc(16px + env(safe-area-inset-bottom));
-        z-index:9999;
+        position:fixed; z-index:9999;
+        bottom:calc(16px + env(safe-area-inset-bottom));
+        /* intencionalmente sem left/right aqui; vamos travar inline */
         border:0;border-radius:999px;padding:10px 14px;
         box-shadow:0 6px 18px rgba(0,0,0,.18);
         font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
@@ -275,57 +205,48 @@
       #lang-toggle:active{transform:translateY(0)}
       @media (prefers-color-scheme: light){#lang-toggle{background:#111827;color:#fff}}
     `;
-    const tag = document.createElement("style");
-    tag.id = STYLE_ID;
-    tag.textContent = css;
     document.head.appendChild(tag);
   }
 
-  function createButton() {
-    const btn = document.createElement("button");
-    btn.id = "lang-toggle";
-    btn.type = "button";
-    btn.setAttribute("aria-label", "Toggle language");
+  function createButton(){
+    const btn=document.createElement("button");
+    btn.id="lang-toggle"; btn.type="button"; btn.setAttribute("aria-label","Toggle language");
+    // Força posição via inline (sobrepõe qualquer CSS antigo)
+    btn.style.left = "max(16px, env(safe-area-inset-left))";
+    btn.style.right = "auto";
+    btn.style.bottom = "calc(16px + env(safe-area-inset-bottom))";
+    btn.style.position = "fixed";
     document.body.appendChild(btn);
     return btn;
   }
+
   const getLang = () => localStorage.getItem(STORAGE_KEY) || "en";
   const setLang = (v) => localStorage.setItem(STORAGE_KEY, v);
   const updateBtn = (btn) => btn.textContent = getLang()==="pt" ? "PT-BR · EN" : "EN · PT-BR";
 
-  // ==== Init ====
+  // ===== Init =====
   function init(){
     injectStyles();
     const btn = createButton();
     updateBtn(btn);
 
-    if(getLang()==="pt"){
-      translateTextNodesToPT();
-      translateAttrsToPT();
-      translateAboutParagraphPT();
-      applyHead("pt");
-      startObserver();
-    } else {
-      applyHead("en");
-    }
+    if (getLang()==="pt"){
+      translateTextNodesToPT(); translateAttrsToPT(); translateAboutParagraphPT();
+      applyHead("pt"); startObserver();
+    } else { applyHead("en"); }
 
     btn.addEventListener("click", ()=>{
       const next = getLang()==="en" ? "pt" : "en";
       setLang(next); updateBtn(btn);
       if(next==="pt"){
-        translateTextNodesToPT();
-        translateAttrsToPT();
-        translateAboutParagraphPT();
-        applyHead("pt");
-        startObserver();
+        translateTextNodesToPT(); translateAttrsToPT(); translateAboutParagraphPT();
+        applyHead("pt"); startObserver();
       } else {
-        observer.disconnect();
-        revertToEN();
-        applyHead("en");
+        observer.disconnect(); revertToEN(); applyHead("en");
       }
     });
   }
 
-  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", init);
+  if (document.readyState==="loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
