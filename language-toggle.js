@@ -1,16 +1,16 @@
-/* language-toggle.js — EN ⇄ PT-BR (v4.3, botão no canto inferior ESQUERDO)
+/* language-toggle.js — EN ⇄ PT-BR (v4.4, botão fixo no canto INFERIOR ESQUERDO)
    Autor: Andrey Gomes (andreygms04@gmail.com) | GitHub: https://github.com/MonkeyDevs4
-   Mantém o botão PT-BR ⇄ EN, traduz todo o conteúdo, atributos e HEAD.
+   Mantém o botão PT-BR ⇄ EN, traduz todo o conteúdo/atributos/HEAD.
 */
-
 (function () {
   "use strict";
 
   const STORAGE_KEY = "lang"; // "en" | "pt"
   const TRANSLATABLE_ATTRS = ["alt", "title", "aria-label", "placeholder", "value"];
   const EXCLUDE_TAGS = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "NOSCRIPT", "TEXTAREA"]);
+  const STYLE_ID = "lang-toggle-style";
 
-  // ===== Mapeamentos (minúsculas) =====
+  // ===== Mapeamentos (minúsculas) — textos do seu index.html =====
   const TEXT_EN_TO_PT = new Map([
     // Nav
     ["services", "Serviços"],
@@ -117,6 +117,15 @@
     return t && t.trim().length > 0;
   }
 
+  function TreeWalker(root, whatToShow) {
+    if (document.createTreeWalker) return document.createTreeWalker(root, whatToShow, null);
+    // Polyfill simples (fallback)
+    const texts = [];
+    (function collect(n){ if (n.nodeType === 3) texts.push(n); if (n.childNodes) Array.from(n.childNodes).forEach(collect); })(root);
+    let i = -1;
+    return { nextNode(){ i++; return texts[i] || null; } };
+  }
+
   function translateTextNodesToPT(root = document.body) {
     const walker = new TreeWalker(root, NodeFilter.SHOW_TEXT);
     let node;
@@ -132,26 +141,12 @@
     }
   }
 
-  // Fallback TreeWalker for older browsers
-  function TreeWalker(root, whatToShow) {
-    if (document.createTreeWalker) return document.createTreeWalker(root, whatToShow, null);
-    // Polyfill simples (iterando por todos elementos e nós-Texto)
-    const texts = [];
-    (function collect(n){
-      if (n.nodeType === 3) texts.push(n);
-      if (n.childNodes) Array.from(n.childNodes).forEach(collect);
-    })(root);
-    let i = -1;
-    return { nextNode(){ i++; return texts[i] || null; } };
-  }
-
   function translateAttrsToPT(root = document.body) {
     const all = root.querySelectorAll("*");
     all.forEach((el) => {
       if (EXCLUDE_TAGS.has(el.tagName) || el.closest("[data-no-i18n]")) return;
       let saved = attrOriginal.get(el);
       if (!saved) { saved = {}; attrOriginal.set(el, saved); }
-
       TRANSLATABLE_ATTRS.forEach((attr) => {
         if (!el.hasAttribute(attr)) return;
         const val = el.getAttribute(attr); if (!val) return;
@@ -166,7 +161,6 @@
   function translateAboutParagraphPT() {
     const p = document.querySelector("#about .card p");
     if (!p) return;
-
     if (!elementOriginalHTML.has(p)) elementOriginalHTML.set(p, p.innerHTML);
 
     const name = (p.querySelector("strong")?.textContent || "Andrey Gomes").trim();
@@ -225,11 +219,11 @@
     for (const m of muts) {
       if (m.type === "childList") {
         m.addedNodes.forEach((n) => {
-          if (n.nodeType === Node.ELEMENT_NODE) {
+          if (n.nodeType === 1) {
             translateTextNodesToPT(n);
             translateAttrsToPT(n);
             translateAboutParagraphPT();
-          } else if (n.nodeType === Node.TEXT_NODE && isTextNodeEligible(n)) {
+          } else if (n.nodeType === 3 && isTextNodeEligible(n)) {
             if (!touchedTextNodes.has(n)) textOriginal.set(n, n.nodeValue);
             const key = lc(n.nodeValue);
             if (TEXT_EN_TO_PT.has(key)) n.nodeValue = TEXT_EN_TO_PT.get(key);
@@ -258,11 +252,19 @@
     });
   }
 
-  // ==== UI do botão (AGORA NA ESQUERDA) ====
+  // ==== UI do botão (forçando ESQUERDA) ====
   function injectStyles() {
+    // Remove estilo antigo se existir
+    const old = document.getElementById(STYLE_ID);
+    if (old) old.remove();
+
     const css = `
       #lang-toggle{
-        position:fixed;left:16px;bottom:16px;z-index:9999; /* mudou para ESQUERDA */
+        position:fixed;
+        left: max(16px, env(safe-area-inset-left)) !important;
+        right: auto !important;
+        bottom: calc(16px + env(safe-area-inset-bottom));
+        z-index:9999;
         border:0;border-radius:999px;padding:10px 14px;
         box-shadow:0 6px 18px rgba(0,0,0,.18);
         font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
@@ -274,9 +276,11 @@
       @media (prefers-color-scheme: light){#lang-toggle{background:#111827;color:#fff}}
     `;
     const tag = document.createElement("style");
+    tag.id = STYLE_ID;
     tag.textContent = css;
     document.head.appendChild(tag);
   }
+
   function createButton() {
     const btn = document.createElement("button");
     btn.id = "lang-toggle";
