@@ -1,25 +1,33 @@
-/* language-toggle.js — EN ⇄ PT-BR (v4.5, botão fixo no canto INFERIOR ESQUERDO)
+/* language-toggle.js — EN ⇄ PT-BR (v4.7, com Workana)
    Autor: Andrey Gomes (andreygms04@gmail.com) | GitHub: https://github.com/MonkeyDevs4
-   Mantém o botão PT-BR ⇄ EN, traduz todo o conteúdo/atributos/HEAD.
+   - Botão de idioma fixo no canto inferior esquerdo
+   - Tradução de todo o conteúdo visível, atributos e <head>
+   - Inclui “View Workana Profile” → “Ver perfil na Workana”
 */
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "lang"; // "en" | "pt"
+  const STORAGE_KEY = "lang";
   const TRANSLATABLE_ATTRS = ["alt", "title", "aria-label", "placeholder", "value"];
   const EXCLUDE_TAGS = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "NOSCRIPT", "TEXTAREA"]);
   const STYLE_ID = "lang-toggle-style";
 
-  // ===== Textos do seu index.html (minúsculas) =====
+  // ===== Textos do site (chaves em minúsculas) =====
   const TEXT_EN_TO_PT = new Map([
-    // Nav
-    ["services", "Serviços"], ["portfolio", "Portfólio"], ["about", "Sobre"], ["contact", "Contato"],
+    // Navegação
+    ["services", "Serviços"],
+    ["portfolio", "Portfólio"],
+    ["about", "Sobre"],
+    ["contact", "Contato"],
+
     // Hero
     ["web developer", "Desenvolvedor Web"],
     ["i build modern, responsive and professional websites.", "Eu crio sites modernos, responsivos e profissionais."],
     ["from minimal and elegant to bold and colorful — i craft websites that match your brand, loading fast and working perfectly on any device.",
      "Do minimalista e elegante ao ousado e colorido — eu desenvolvo sites que combinam com a sua marca, carregam rápido e funcionam perfeitamente em qualquer dispositivo."],
-    ["email me", "Me envie um e-mail"], ["view upwork profile", "Ver perfil no Upwork"],
+    ["email me", "Me envie um e-mail"],
+    ["view workana profile", "Ver perfil na Workana"], // ← novo
+
     // Services
     ["services", "Serviços"],
     ["everything you need to launch a clean, modern and effective website.",
@@ -42,7 +50,8 @@
     ["seo & performance", "SEO & Desempenho"],
     ["on-page seo, speed optimization and best practices.",
      "SEO on-page, otimização de velocidade e boas práticas."],
-    // Portfolio
+
+    // Portfólio
     ["portfolio samples", "Exemplos de Portfólio"],
     ["a few examples and prototypes. final client projects are added upon delivery.",
      "Alguns exemplos e protótipos. Projetos finais de clientes são adicionados após a entrega."],
@@ -56,14 +65,21 @@
     ["product grid, detail page and cart flow for demos.",
      "Grade de produtos, página de detalhes e fluxo de carrinho para demonstrações."],
     ["click to reveal", "Clique para revelar"],
-    // Tags About
-    ["responsive design", "Design Responsivo"], ["seo basics", "Noções de SEO"], ["performance", "Desempenho"],
-    // Contact
+
+    // About (tags)
+    ["responsive design", "Design Responsivo"],
+    ["seo basics", "Noções de SEO"],
+    ["performance", "Desempenho"],
+
+    // Contato
     ["contact", "Contato"],
     ["let’s build something great together.", "Vamos construir algo incrível juntos."],
     ["let's build something great together.", "Vamos construir algo incrível juntos."],
     ["prefer email? it’s the fastest way to reach me.", "Prefere e-mail? É a forma mais rápida de falar comigo."],
-    ["copy email", "Copiar e-mail"], ["write now", "Escrever agora"], ["also available on", "Também disponível em"],
+    ["copy email", "Copiar e-mail"],
+    ["write now", "Escrever agora"],
+    ["also available on", "Também disponível em"],
+
     // Botão flutuante de contato
     ["email me", "Me envie um e-mail"],
   ]);
@@ -72,9 +88,11 @@
     ["business landing page preview", "Prévia de Landing Page Empresarial"],
     ["personal portfolio preview", "Prévia de Portfólio Pessoal"],
     ["store prototype preview", "Prévia de Protótipo de Loja"],
-    ["reveal image", "Revelar imagem"], ["open live demo", "Abrir demo ao vivo"],
+    ["reveal image", "Revelar imagem"],
+    ["open live demo", "Abrir demo ao vivo"],
   ]);
 
+  // Head
   const HEAD_TRANSLATIONS = {
     title_en: "Andrey Gomes — Web Developer",
     title_pt: "Andrey Gomes — Desenvolvedor Web",
@@ -97,7 +115,8 @@
     return p && !EXCLUDE_TAGS.has(p.tagName) && !p.closest("[data-no-i18n]") && n.nodeValue.trim();
   }
 
-  function TreeWalker(root, what){ if (document.createTreeWalker) return document.createTreeWalker(root, what, null);
+  function TreeWalker(root, what){
+    if (document.createTreeWalker) return document.createTreeWalker(root, what, null);
     const texts=[];(function walk(n){ if(n.nodeType===3) texts.push(n); n.childNodes&&[...n.childNodes].forEach(walk); })(root);
     let i=-1; return { nextNode(){ i++; return texts[i]||null; } };
   }
@@ -140,8 +159,10 @@
     }
   }
 
-  function revertSpecialCases(){ const p=document.querySelector("#about .card p"); if(!p) return;
-    const orig = elementOriginalHTML.get(p); if(orig) p.innerHTML=orig; }
+  function revertSpecialCases(){
+    const p=document.querySelector("#about .card p"); if(!p) return;
+    const orig = elementOriginalHTML.get(p); if(orig) p.innerHTML=orig;
+  }
 
   function revertToEN(){
     revertSpecialCases();
@@ -159,7 +180,7 @@
     document.documentElement.lang = lang==="pt" ? "pt-BR" : "en";
   }
 
-  // ===== Observer =====
+  // Observer
   const observer = new MutationObserver((muts)=>{
     if (getLang()!=="pt") return;
     for (const m of muts){
@@ -186,15 +207,15 @@
     observer.observe(document.body,{ childList:true, subtree:true, attributes:true, attributeOldValue:true, attributeFilter:TRANSLATABLE_ATTRS });
   }
 
-  // ===== Botão de idioma (FORÇANDO ESQUERDA) =====
+  // Botão de idioma (canto inferior ESQUERDO)
   function injectStyles(){
     const old=document.getElementById(STYLE_ID); if(old) old.remove();
     const tag=document.createElement("style"); tag.id=STYLE_ID;
     tag.textContent = `
       #lang-toggle{
         position:fixed; z-index:9999;
-        bottom:calc(16px + env(safe-area-inset-bottom));
-        /* intencionalmente sem left/right aqui; vamos travar inline */
+        left: max(16px, env(safe-area-inset-left));
+        right:auto; bottom: calc(16px + env(safe-area-inset-bottom));
         border:0;border-radius:999px;padding:10px 14px;
         box-shadow:0 6px 18px rgba(0,0,0,.18);
         font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
@@ -211,7 +232,6 @@
   function createButton(){
     const btn=document.createElement("button");
     btn.id="lang-toggle"; btn.type="button"; btn.setAttribute("aria-label","Toggle language");
-    // Força posição via inline (sobrepõe qualquer CSS antigo)
     btn.style.left = "max(16px, env(safe-area-inset-left))";
     btn.style.right = "auto";
     btn.style.bottom = "calc(16px + env(safe-area-inset-bottom))";
@@ -224,7 +244,6 @@
   const setLang = (v) => localStorage.setItem(STORAGE_KEY, v);
   const updateBtn = (btn) => btn.textContent = getLang()==="pt" ? "PT-BR · EN" : "EN · PT-BR";
 
-  // ===== Init =====
   function init(){
     injectStyles();
     const btn = createButton();
