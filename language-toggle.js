@@ -1,17 +1,15 @@
-/* language-toggle.js — EN ⇄ PT-BR (v4)
+/* language-toggle.js — EN ⇄ PT-BR (v4.1)
    Autor: Andrey Gomes (andreygms04@gmail.com) | GitHub: https://github.com/MonkeyDevs4
-   Uso: manter <script src="language-toggle.js"></script> no seu index.html
+   Uso: mantenha <script src="language-toggle.js"></script> no index.html
 */
-
 (function () {
   "use strict";
 
-  // ==== Config ====
   const STORAGE_KEY = "lang"; // "en" | "pt"
   const TRANSLATABLE_ATTRS = ["alt", "title", "aria-label", "placeholder", "value"];
+  const EXCLUDE_TAGS = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "NOSCRIPT", "TEXTAREA"]);
 
-  // ===== Textos do seu index.html (EXATOS) =====
-  // Mapeamos em minúsculas para casar sem se preocupar com caixa.
+  // ===== Mapeamentos (minúsculas) =====
   const TEXT_EN_TO_PT = new Map([
     // Header / Nav
     ["services", "Serviços"],
@@ -27,7 +25,7 @@
     ["email me", "Me envie um e-mail"],
     ["view upwork profile", "Ver perfil no Upwork"],
 
-    // Services section
+    // Services
     ["services", "Serviços"],
     ["everything you need to launch a clean, modern and effective website.",
      "Tudo que você precisa para lançar um site limpo, moderno e eficaz."],
@@ -50,7 +48,7 @@
     ["on-page seo, speed optimization and best practices.",
      "SEO on-page, otimização de velocidade e boas práticas."],
 
-    // Portfolio section
+    // Portfolio
     ["portfolio samples", "Exemplos de Portfólio"],
     ["a few examples and prototypes. final client projects are added upon delivery.",
      "Alguns exemplos e protótipos. Projetos finais de clientes são adicionados após a entrega."],
@@ -65,10 +63,7 @@
      "Grade de produtos, página de detalhes e fluxo de carrinho para demonstrações."],
     ["click to reveal", "Clique para revelar"],
 
-    // About
-    ["about", "Sobre"],
-    ["hi! i’m andrey gomes, a web developer focused on fast, accessible and responsive experiences. i understand your goals, design a clean structure and deliver a website you’ll be proud to share.",
-     "Olá! Eu sou Andrey Gomes, desenvolvedor web focado em experiências rápidas, acessíveis e responsivas. Entendo seus objetivos, desenho uma estrutura limpa e entrego um site do qual você terá orgulho de compartilhar."],
+    // Tags do About
     ["responsive design", "Design Responsivo"],
     ["seo basics", "Noções de SEO"],
     ["performance", "Desempenho"],
@@ -76,16 +71,16 @@
     // Contact
     ["contact", "Contato"],
     ["let’s build something great together.", "Vamos construir algo incrível juntos."],
+    ["let's build something great together.", "Vamos construir algo incrível juntos."],
     ["prefer email? it’s the fastest way to reach me.", "Prefere e-mail? É a forma mais rápida de falar comigo."],
     ["copy email", "Copiar e-mail"],
     ["write now", "Escrever agora"],
     ["also available on", "Também disponível em"],
 
-    // Floating contact button
+    // Botão flutuante
     ["email me", "Me envie um e-mail"],
   ]);
 
-  // Atributos (alt/aria etc.)
   const ATTR_EN_TO_PT = new Map([
     ["business landing page preview", "Prévia de Landing Page Empresarial"],
     ["personal portfolio preview", "Prévia de Portfólio Pessoal"],
@@ -94,7 +89,7 @@
     ["open live demo", "Abrir demo ao vivo"],
   ]);
 
-  // Head (title / meta description)
+  // Head
   const HEAD_TRANSLATIONS = {
     title_en: "Andrey Gomes — Web Developer",
     title_pt: "Andrey Gomes — Desenvolvedor Web",
@@ -102,14 +97,17 @@
     desc_pt: "Sites modernos, responsivos e profissionais por Andrey Gomes.",
   };
 
-  // ===== Infra de tradução =====
-  const textOriginal = new WeakMap(); // Node(TEXT) -> original
-  const attrOriginal = new WeakMap(); // Element -> {attr: original}
+  // ===== Infra =====
+  const textOriginal = new WeakMap();     // Node(TEXT) -> string
+  const attrOriginal = new WeakMap();     // Element -> {attr: string}
+  const elementOriginalHTML = new WeakMap(); // Element -> innerHTML (para casos especiais)
   const touchedTextNodes = new Set();
 
-  const EXCLUDE_TAGS = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "NOSCRIPT", "TEXTAREA"]);
+  // Helpers
+  const lc = (s) => (s ?? "").toString().trim().toLowerCase();
+  const normalize = (s) =>
+    lc(s).replace(/\s+/g, " ").replace(/[’']/g, "'");
 
-  function lc(s) { return (s ?? "").toString().trim().toLowerCase(); }
   function isTextNodeEligible(node) {
     if (!node || node.nodeType !== Node.TEXT_NODE) return false;
     const parent = node.parentElement;
@@ -151,11 +149,45 @@
     });
   }
 
+  // ===== Caso especial: parágrafo do "Sobre" com <strong> no meio =====
+  function translateAboutParagraphPT() {
+    const p = document.querySelector("#about .card p");
+    if (!p) return;
+
+    const name = (p.querySelector("strong")?.textContent || "Andrey Gomes").trim();
+    const currentNorm = normalize(p.textContent);
+
+    const targetEN = normalize(
+      "Hi! I'm Andrey Gomes, a web developer focused on fast, accessible and responsive experiences. I understand your goals, design a clean structure and deliver a website you'll be proud to share."
+    );
+
+    if (currentNorm === targetEN) {
+      if (!elementOriginalHTML.has(p)) elementOriginalHTML.set(p, p.innerHTML);
+      const ptHTML =
+        `Olá! Eu sou <strong>${name}</strong>, ` +
+        `desenvolvedor web focado em experiências rápidas, acessíveis e responsivas. ` +
+        `Entendo seus objetivos, desenho uma estrutura limpa e entrego um site ` +
+        `do qual você terá orgulho de compartilhar.`;
+      p.innerHTML = ptHTML;
+    }
+  }
+
+  function revertSpecialCases() {
+    const p = document.querySelector("#about .card p");
+    if (!p) return;
+    const orig = elementOriginalHTML.get(p);
+    if (orig) p.innerHTML = orig;
+  }
+
   function revertToEN() {
+    // Reverte casos especiais antes de restaurar nós de texto
+    revertSpecialCases();
+
     touchedTextNodes.forEach((node) => {
       const orig = textOriginal.get(node);
       if (typeof orig === "string") node.nodeValue = orig;
     });
+
     document.querySelectorAll("*").forEach((el) => {
       const saved = attrOriginal.get(el);
       if (!saved) return;
@@ -178,7 +210,7 @@
     }
   }
 
-  // Observa conteúdo dinâmico enquanto estiver em PT
+  // Observer para conteúdo dinâmico
   const observer = new MutationObserver((muts) => {
     if (getLang() !== "pt") return;
     for (const m of muts) {
@@ -187,6 +219,7 @@
           if (n.nodeType === Node.ELEMENT_NODE) {
             translateTextNodesToPT(n);
             translateAttrsToPT(n);
+            translateAboutParagraphPT();
           } else if (n.nodeType === Node.TEXT_NODE && isTextNodeEligible(n)) {
             if (!touchedTextNodes.has(n)) textOriginal.set(n, n.nodeValue);
             const key = lc(n.nodeValue);
@@ -253,10 +286,10 @@
     const btn = createButton();
     updateBtn(btn);
 
-    // aplica idioma salvo
     if(getLang()==="pt"){
       translateTextNodesToPT();
       translateAttrsToPT();
+      translateAboutParagraphPT();
       applyHead("pt");
       startObserver();
     } else {
@@ -269,6 +302,7 @@
       if(next==="pt"){
         translateTextNodesToPT();
         translateAttrsToPT();
+        translateAboutParagraphPT();
         applyHead("pt");
         startObserver();
       } else {
