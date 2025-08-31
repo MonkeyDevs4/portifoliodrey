@@ -1,4 +1,4 @@
-/* language-toggle.js — EN ⇄ PT-BR (v4.2)
+/* language-toggle.js — EN ⇄ PT-BR (v4.3, botão no canto inferior ESQUERDO)
    Autor: Andrey Gomes (andreygms04@gmail.com) | GitHub: https://github.com/MonkeyDevs4
    Mantém o botão PT-BR ⇄ EN, traduz todo o conteúdo, atributos e HEAD.
 */
@@ -78,7 +78,7 @@
     ["write now", "Escrever agora"],
     ["also available on", "Também disponível em"],
 
-    // Botão flutuante
+    // Botão flutuante de contato
     ["email me", "Me envie um e-mail"],
   ]);
 
@@ -118,7 +118,7 @@
   }
 
   function translateTextNodesToPT(root = document.body) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    const walker = new TreeWalker(root, NodeFilter.SHOW_TEXT);
     let node;
     while ((node = walker.nextNode())) {
       if (!isTextNodeEligible(node)) continue;
@@ -130,6 +130,19 @@
       }
       if (TEXT_EN_TO_PT.has(key)) node.nodeValue = TEXT_EN_TO_PT.get(key);
     }
+  }
+
+  // Fallback TreeWalker for older browsers
+  function TreeWalker(root, whatToShow) {
+    if (document.createTreeWalker) return document.createTreeWalker(root, whatToShow, null);
+    // Polyfill simples (iterando por todos elementos e nós-Texto)
+    const texts = [];
+    (function collect(n){
+      if (n.nodeType === 3) texts.push(n);
+      if (n.childNodes) Array.from(n.childNodes).forEach(collect);
+    })(root);
+    let i = -1;
+    return { nextNode(){ i++; return texts[i] || null; } };
   }
 
   function translateAttrsToPT(root = document.body) {
@@ -149,17 +162,14 @@
     });
   }
 
-  // ===== Caso especial robusto: parágrafo do "Sobre" com <strong> =====
+  // ===== Caso especial: parágrafo do "Sobre" com <strong> =====
   function translateAboutParagraphPT() {
     const p = document.querySelector("#about .card p");
     if (!p) return;
 
-    // salva original para reverter
     if (!elementOriginalHTML.has(p)) elementOriginalHTML.set(p, p.innerHTML);
 
     const name = (p.querySelector("strong")?.textContent || "Andrey Gomes").trim();
-
-    // Normaliza o texto atual e verifica por SUBSTRINGS-chave (sem depender de igualdade)
     const txt = normalize(p.textContent);
     const hasIntro = txt.includes("hi! i'm");
     const hasFocus = txt.includes("web developer focused on fast, accessible and responsive experiences");
@@ -248,11 +258,11 @@
     });
   }
 
-  // ==== UI do botão ====
+  // ==== UI do botão (AGORA NA ESQUERDA) ====
   function injectStyles() {
     const css = `
       #lang-toggle{
-        position:fixed;right:16px;bottom:16px;z-index:9999;
+        position:fixed;left:16px;bottom:16px;z-index:9999; /* mudou para ESQUERDA */
         border:0;border-radius:999px;padding:10px 14px;
         box-shadow:0 6px 18px rgba(0,0,0,.18);
         font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
