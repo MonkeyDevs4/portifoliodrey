@@ -1,7 +1,8 @@
-/* language-toggle.js — EN ⇄ PT-BR (v4.1)
+/* language-toggle.js — EN ⇄ PT-BR (v4.2)
    Autor: Andrey Gomes (andreygms04@gmail.com) | GitHub: https://github.com/MonkeyDevs4
-   Uso: mantenha <script src="language-toggle.js"></script> no index.html
+   Mantém o botão PT-BR ⇄ EN, traduz todo o conteúdo, atributos e HEAD.
 */
+
 (function () {
   "use strict";
 
@@ -11,7 +12,7 @@
 
   // ===== Mapeamentos (minúsculas) =====
   const TEXT_EN_TO_PT = new Map([
-    // Header / Nav
+    // Nav
     ["services", "Serviços"],
     ["portfolio", "Portfólio"],
     ["about", "Sobre"],
@@ -98,15 +99,14 @@
   };
 
   // ===== Infra =====
-  const textOriginal = new WeakMap();     // Node(TEXT) -> string
-  const attrOriginal = new WeakMap();     // Element -> {attr: string}
-  const elementOriginalHTML = new WeakMap(); // Element -> innerHTML (para casos especiais)
+  const textOriginal = new WeakMap();        // Node(TEXT) -> string
+  const attrOriginal = new WeakMap();        // Element -> {attr: string}
+  const elementOriginalHTML = new WeakMap(); // Element -> innerHTML (casos especiais)
   const touchedTextNodes = new Set();
 
   // Helpers
   const lc = (s) => (s ?? "").toString().trim().toLowerCase();
-  const normalize = (s) =>
-    lc(s).replace(/\s+/g, " ").replace(/[’']/g, "'");
+  const normalize = (s) => lc(s).replace(/\s+/g, " ").replace(/[’']/g, "'");
 
   function isTextNodeEligible(node) {
     if (!node || node.nodeType !== Node.TEXT_NODE) return false;
@@ -149,26 +149,28 @@
     });
   }
 
-  // ===== Caso especial: parágrafo do "Sobre" com <strong> no meio =====
+  // ===== Caso especial robusto: parágrafo do "Sobre" com <strong> =====
   function translateAboutParagraphPT() {
     const p = document.querySelector("#about .card p");
     if (!p) return;
 
+    // salva original para reverter
+    if (!elementOriginalHTML.has(p)) elementOriginalHTML.set(p, p.innerHTML);
+
     const name = (p.querySelector("strong")?.textContent || "Andrey Gomes").trim();
-    const currentNorm = normalize(p.textContent);
 
-    const targetEN = normalize(
-      "Hi! I'm Andrey Gomes, a web developer focused on fast, accessible and responsive experiences. I understand your goals, design a clean structure and deliver a website you'll be proud to share."
-    );
+    // Normaliza o texto atual e verifica por SUBSTRINGS-chave (sem depender de igualdade)
+    const txt = normalize(p.textContent);
+    const hasIntro = txt.includes("hi! i'm");
+    const hasFocus = txt.includes("web developer focused on fast, accessible and responsive experiences");
+    const hasProud = txt.includes("you'll be proud to share");
 
-    if (currentNorm === targetEN) {
-      if (!elementOriginalHTML.has(p)) elementOriginalHTML.set(p, p.innerHTML);
-      const ptHTML =
+    if (hasIntro && hasFocus && hasProud) {
+      p.innerHTML =
         `Olá! Eu sou <strong>${name}</strong>, ` +
         `desenvolvedor web focado em experiências rápidas, acessíveis e responsivas. ` +
         `Entendo seus objetivos, desenho uma estrutura limpa e entrego um site ` +
         `do qual você terá orgulho de compartilhar.`;
-      p.innerHTML = ptHTML;
     }
   }
 
@@ -180,14 +182,11 @@
   }
 
   function revertToEN() {
-    // Reverte casos especiais antes de restaurar nós de texto
     revertSpecialCases();
-
     touchedTextNodes.forEach((node) => {
       const orig = textOriginal.get(node);
       if (typeof orig === "string") node.nodeValue = orig;
     });
-
     document.querySelectorAll("*").forEach((el) => {
       const saved = attrOriginal.get(el);
       if (!saved) return;
@@ -210,7 +209,7 @@
     }
   }
 
-  // Observer para conteúdo dinâmico
+  // Observer (dinâmico)
   const observer = new MutationObserver((muts) => {
     if (getLang() !== "pt") return;
     for (const m of muts) {
@@ -276,9 +275,9 @@
     document.body.appendChild(btn);
     return btn;
   }
-  function getLang(){ return localStorage.getItem(STORAGE_KEY) || "en"; }
-  function setLang(v){ localStorage.setItem(STORAGE_KEY, v); }
-  function updateBtn(btn){ btn.textContent = getLang()==="pt" ? "PT-BR · EN" : "EN · PT-BR"; }
+  const getLang = () => localStorage.getItem(STORAGE_KEY) || "en";
+  const setLang = (v) => localStorage.setItem(STORAGE_KEY, v);
+  const updateBtn = (btn) => btn.textContent = getLang()==="pt" ? "PT-BR · EN" : "EN · PT-BR";
 
   // ==== Init ====
   function init(){
